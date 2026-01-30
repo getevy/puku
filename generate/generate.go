@@ -439,6 +439,11 @@ func (u *updater) allocateSources(conf *config.Config, pkgDir string, sources ma
 		return nil, err
 	}
 
+	existingRuleNames := map[string]struct{}{}
+	for _, r := range rules {
+		existingRuleNames[r.Name()] = struct{}{}
+	}
+
 	var newRules []*edit.Rule
 	for _, src := range unallocated {
 		importedFile := sources[src]
@@ -465,7 +470,9 @@ func (u *updater) allocateSources(conf *config.Config, pkgDir string, sources ma
 			}
 		}
 		if rule == nil {
-			name := filepath.Base(pkgDir)
+			baseName := filepath.Base(pkgDir)
+			name := baseName
+			isExternal := importedFile.IsExternal(filepath.Join(u.plzConf.ImportPath(), pkgDir))
 			kind := "go_library"
 			if importedFile.IsTest() {
 				name += "_test"
@@ -475,11 +482,24 @@ func (u *updater) allocateSources(conf *config.Config, pkgDir string, sources ma
 				kind = "go_binary"
 				name = "main"
 			}
+			_, nameExists := existingRuleNames[name]
+			if nameExists {
+				if importedFile.IsTest() {
+					if isExternal {
+						name = fmt.Sprintf("%s_external_test", baseName)
+					} else {
+						name = fmt.Sprintf("%s_internal_test", baseName)
+					}
+				} else {
+					return nil, fmt.Errorf("rule with name %s already exists in %s", name, pkgDir)
+				}
+			}
 			rule = edit.NewRule(edit.NewRuleExpr(kind, name), kinds.DefaultKinds[kind], pkgDir)
-			if importedFile.IsExternal(filepath.Join(u.plzConf.ImportPath(), pkgDir)) {
+			if isExternal {
 				setExternal(rule)
 			}
 			newRules = append(newRules, rule)
+			existingRuleNames[name] = struct{}{}
 		}
 
 		rule.AddSrc(src)
