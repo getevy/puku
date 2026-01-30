@@ -472,7 +472,7 @@ func (u *updater) allocateSources(conf *config.Config, pkgDir string, sources ma
 		if rule == nil {
 			baseName := filepath.Base(pkgDir)
 			name := baseName
-			isExternal_ := importedFile.IsExternal(filepath.Join(u.plzConf.ImportPath(), pkgDir))
+			isExternal := importedFile.IsExternal(filepath.Join(u.plzConf.ImportPath(), pkgDir))
 			kind := "go_library"
 			if importedFile.IsTest() {
 				name += "_test"
@@ -485,7 +485,7 @@ func (u *updater) allocateSources(conf *config.Config, pkgDir string, sources ma
 			_, nameExists := existingRuleNames[name]
 			if nameExists {
 				if importedFile.IsTest() {
-					if isExternal_ {
+					if isExternal {
 						name = fmt.Sprintf("%s_external_test", baseName)
 					} else {
 						name = fmt.Sprintf("%s_internal_test", baseName)
@@ -495,7 +495,7 @@ func (u *updater) allocateSources(conf *config.Config, pkgDir string, sources ma
 				}
 			}
 			rule = edit.NewRule(edit.NewRuleExpr(kind, name), kinds.DefaultKinds[kind], pkgDir)
-			if isExternal_ {
+			if isExternal {
 				setExternal(rule)
 			}
 			newRules = append(newRules, rule)
