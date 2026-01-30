@@ -51,7 +51,7 @@ func TestAllocateSources(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Len(t, newRules, 1)
-	assert.Equal(t, "foo_test", newRules[0].Name())
+	assert.Equal(t, "foo_external_test", newRules[0].Name())
 	assert.ElementsMatch(t, []string{"external_test.go"}, mustGetSources(t, u, newRules[0]))
 
 	assert.ElementsMatch(t, []string{"foo.go", "bar.go"}, mustGetSources(t, u, rules[0]))
